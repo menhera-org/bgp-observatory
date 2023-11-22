@@ -20,6 +20,8 @@
 import { FrrBgp } from "./types.js";
 import { Table } from "./Table.js";
 import { isSpecialAsn } from "./asn.js";
+import * as ipv4 from "./ipv4.js";
+import * as ipv6 from "./ipv6.js";
 
 export interface DataModelOptions {
   ignoreDefaultRoutes?: boolean;
@@ -88,6 +90,18 @@ export class DataModel {
           continue;
         }
         if (!route.valid) {
+          continue;
+        }
+        if (ipVersion == 4 && 24 < route.prefixLen) {
+          continue;
+        }
+        if (ipVersion == 6 && 48 < route.prefixLen) {
+          continue;
+        }
+        if (ipVersion == 4 && ipv4.isSpecialPrefix(route.prefix)) {
+          continue;
+        }
+        if (ipVersion == 6 && ipv6.isSpecialPrefix(route.prefix)) {
           continue;
         }
 
