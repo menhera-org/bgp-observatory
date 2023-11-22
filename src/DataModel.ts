@@ -19,6 +19,7 @@
 
 import { FrrBgp } from "./types.js";
 import { Table } from "./Table.js";
+import { isSpecialAsn } from "./asn.js";
 
 export interface DataModelOptions {
   ignoreDefaultRoutes?: boolean;
@@ -90,7 +91,26 @@ export class DataModel {
           continue;
         }
 
-        const asPath = route.path.split(' ').filter(asn => '' != asn);
+        const asPath = route.path.split(' ').filter(asn => '' != asn).map((rawAsn) => {
+          if (!rawAsn.startsWith('{')) {
+            const asn = parseInt(rawAsn, 10);
+            if (isSpecialAsn(asn)) {
+              return '';
+            }
+            return rawAsn;
+          }
+          const asSet = rawAsn.slice(1, -1).split(',').map((asn) => parseInt(asn, 10)).filter((asn) => !isSpecialAsn(asn));
+          asSet.sort((a, b) => a - b);
+          if (asSet.length == 1) {
+            return String(asSet[0]);
+          }
+          if (asSet.length > 1) {
+            const str =  `{${asSet.join(',')}}`;
+            console.info(`AS_SET: ${str}`)
+            return str;
+          }
+          return '';
+        }).filter((asn) => '' != asn);
 
         // remove AS_PATH prepending
         for (let i = asPath.length - 1; i >= 0; i--) {
