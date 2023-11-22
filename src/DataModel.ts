@@ -32,14 +32,21 @@ export interface RouterInfo {
 export interface Route {
   readonly ipVersion: 4 | 6;
   readonly prefix: string; // prefix/prefixLen
-  readonly asPath: readonly number[];
-  readonly originAsn: number;
+  readonly asPath: string;
+  readonly originAsn: string;
 }
 
 export interface AsInfo {
-  readonly asn: number;
+  readonly asn: string;
   readonly prefixes: readonly string[]; // prefix/prefixLen
-  readonly neighborAsns: readonly number[];
+  readonly neighborAsns: readonly string[];
+}
+
+interface ParsedBgpData {
+  localAsn: number;
+  routerId: string;
+  routes: Table<Route>;
+  asInfo: Table<AsInfo>;
 }
 
 export class DataModel {
@@ -61,14 +68,14 @@ export class DataModel {
     this.#options = options;
   }
 
-  public importIpv4Json(json: string): void {
+  #parseBgpData(ipVersion: 4 | 6, json: string): ParsedBgpData {
     const bgpData: FrrBgp = JSON.parse(json);
-    this.#ipv4LocalAsn = bgpData.localAS;
-    this.#ipv4RouterId = bgpData.routerId;
-    const routes = new Table<Route>(['prefix', 'originAsn']);
+    const localAsn = bgpData.localAS;
+    const routerId = bgpData.routerId;
+    const routes = new Table<Route>(['prefix', 'originAsn', 'asPath']);
     const asInfo = new Table<AsInfo>(['asn']);
     const localAsInfoItem = {
-      asn: bgpData.localAS,
+      asn: String(bgpData.localAS),
       prefixes: [],
       neighborAsns: [],
     };
@@ -82,23 +89,39 @@ export class DataModel {
         if (!route.valid) {
           continue;
         }
-        const asPathParts = route.path.split(' ');
-        for (const part of asPathParts) {
-          if (isNaN(parseInt(part, 10))) {
-            console.info(`Invalid AS path: ${route.path}`);
+
+        const asPath = route.path.split(' ').filter(asn => '' != asn);
+
+        // remove AS_PATH prepending
+        for (let i = asPath.length - 1; i >= 0; i--) {
+          const asn = asPath[i]!;
+          const prevAsn = asPath[i - 1];
+          if (prevAsn == null || asn != prevAsn) {
+            break;
+          }
+          asPath.splice(i, 1);
+        }
+
+        const originAsn = asPath[asPath.length - 1] ?? String(bgpData.localAS);
+        const routeRecord = {
+          ipVersion: ipVersion,
+          prefix: route.network,
+          asPath: asPath.join(' '),
+          originAsn: originAsn,
+        };
+
+        const routeRecords = routes.find('prefix', routeRecord.prefix);
+        let routeRecordFound = false;
+        for (const record of routeRecords) {
+          if (record.asPath == routeRecord.asPath && record.originAsn == routeRecord.originAsn) {
+            routeRecordFound = true;
+            break;
           }
         }
-        const asPath = route.path.split(' ').map((asn) => parseInt(asn, 10));
-        if (asPath.length < 1) {
-          continue;
+        if (!routeRecordFound) {
+          routes.add(routeRecord);
         }
-        const originAsn = asPath[asPath.length - 1]!;
-        routes.add({
-          ipVersion: 4,
-          prefix: route.network,
-          asPath: asPath,
-          originAsn: originAsn,
-        });
+
         let asInfoItem = asInfo.find('asn', originAsn)[0];
         if (undefined === asInfoItem) {
           asInfoItem = {
@@ -108,8 +131,12 @@ export class DataModel {
           };
           asInfo.add(asInfoItem);
         }
-        (asInfoItem.prefixes as string[]).push(route.network);
-        const asPathIncludingLocalAsn = [bgpData.localAS, ...asPath];
+
+        if (!asInfoItem.prefixes.includes(route.network)) {
+          (asInfoItem.prefixes as string[]).push(route.network);
+        }
+
+        const asPathIncludingLocalAsn = [String(bgpData.localAS), ...asPath];
         for (let i = 0; i < asPathIncludingLocalAsn.length; i++) {
           const asn = asPathIncludingLocalAsn[i]!;
           const prevAsn = asPathIncludingLocalAsn[i - 1];
@@ -124,91 +151,36 @@ export class DataModel {
             asInfo.add(asInfoItem);
           }
           if (undefined !== prevAsn && prevAsn != asn && !asInfoItem.neighborAsns.includes(prevAsn)) {
-            (asInfoItem.neighborAsns as number[]).push(prevAsn);
+            (asInfoItem.neighborAsns as string[]).push(prevAsn);
           }
           if (undefined !== nextAsn && nextAsn != asn && !asInfoItem.neighborAsns.includes(nextAsn)) {
-            (asInfoItem.neighborAsns as number[]).push(nextAsn);
+            (asInfoItem.neighborAsns as string[]).push(nextAsn);
           }
         }
       }
     }
-    this.#ipv4Routes = routes;
-    this.#ipv4AsInfo = asInfo;
+    return {
+      localAsn: localAsn,
+      routerId: routerId,
+      routes: routes,
+      asInfo: asInfo,
+    };
+  }
+
+  public importIpv4Json(json: string): void {
+    const bgpData = this.#parseBgpData(4, json);
+    this.#ipv4LocalAsn = bgpData.localAsn;
+    this.#ipv4RouterId = bgpData.routerId;
+    this.#ipv4Routes = bgpData.routes;
+    this.#ipv4AsInfo = bgpData.asInfo;
   }
 
   public importIpv6Json(json: string): void {
-    const bgpData: FrrBgp = JSON.parse(json);
-    this.#ipv6LocalAsn = bgpData.localAS;
+    const bgpData = this.#parseBgpData(6, json);
+    this.#ipv6LocalAsn = bgpData.localAsn;
     this.#ipv6RouterId = bgpData.routerId;
-    const routes = new Table<Route>(['prefix', 'originAsn']);
-    const asInfo = new Table<AsInfo>(['asn']);
-    const localAsInfoItem = {
-      asn: bgpData.localAS,
-      prefixes: [],
-      neighborAsns: [],
-    };
-    asInfo.add(localAsInfoItem);
-    for (const prefix in bgpData.routes) {
-      const bgpRoutes = bgpData.routes[prefix]!;
-      for (const route of bgpRoutes) {
-        if (this.#options.ignoreDefaultRoutes && 0 == route.prefixLen) {
-          continue;
-        }
-        if (!route.valid) {
-          continue;
-        }
-        const asPathParts = route.path.split(' ');
-        for (const part of asPathParts) {
-          if (isNaN(parseInt(part, 10))) {
-            console.info(`Invalid AS path: ${route.path}`);
-          }
-        }
-        const asPath = route.path.split(' ').map((asn) => parseInt(asn, 10));
-        if (asPath.length < 1) {
-          continue;
-        }
-        const originAsn = asPath[asPath.length - 1]!;
-        routes.add({
-          ipVersion: 6,
-          prefix: route.network,
-          asPath: asPath,
-          originAsn: originAsn,
-        });
-        let asInfoItem = asInfo.find('asn', originAsn)[0];
-        if (undefined === asInfoItem) {
-          asInfoItem = {
-            asn: originAsn,
-            prefixes: [],
-            neighborAsns: [],
-          };
-          asInfo.add(asInfoItem);
-        }
-        (asInfoItem.prefixes as string[]).push(route.network);
-        const asPathIncludingLocalAsn = [bgpData.localAS, ...asPath];
-        for (let i = 0; i < asPathIncludingLocalAsn.length; i++) {
-          const asn = asPathIncludingLocalAsn[i]!;
-          const prevAsn = asPathIncludingLocalAsn[i - 1];
-          const nextAsn = asPathIncludingLocalAsn[i + 1];
-          let asInfoItem = asInfo.find('asn', asn)[0];
-          if (undefined === asInfoItem) {
-            asInfoItem = {
-              asn: asn,
-              prefixes: [],
-              neighborAsns: [],
-            };
-            asInfo.add(asInfoItem);
-          }
-          if (undefined !== prevAsn && prevAsn != asn && !asInfoItem.neighborAsns.includes(prevAsn)) {
-            (asInfoItem.neighborAsns as number[]).push(prevAsn);
-          }
-          if (undefined !== nextAsn && nextAsn != asn && !asInfoItem.neighborAsns.includes(nextAsn)) {
-            (asInfoItem.neighborAsns as number[]).push(nextAsn);
-          }
-        }
-      }
-    }
-    this.#ipv6Routes = routes;
-    this.#ipv6AsInfo = asInfo;
+    this.#ipv6Routes = bgpData.routes;
+    this.#ipv6AsInfo = bgpData.asInfo;
   }
 
   public get ipv4RouterInfo(): RouterInfo | undefined {
