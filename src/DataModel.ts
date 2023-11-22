@@ -67,6 +67,12 @@ export class DataModel {
     this.#ipv4RouterId = bgpData.routerId;
     const routes = new Table<Route>(['prefix', 'originAsn']);
     const asInfo = new Table<AsInfo>(['asn']);
+    const localAsInfoItem = {
+      asn: bgpData.localAS,
+      prefixes: [],
+      neighborAsns: [],
+    };
+    asInfo.add(localAsInfoItem);
     for (const prefix in bgpData.routes) {
       const bgpRoutes = bgpData.routes[prefix]!;
       for (const route of bgpRoutes) {
@@ -99,7 +105,7 @@ export class DataModel {
         (asInfoItem.prefixes as string[]).push(route.network);
         for (let i = 0; i < asPath.length; i++) {
           const asn = asPath[i]!;
-          const prevAsn = asPath[i - 1];
+          const prevAsn = asPath[i - 1] ?? bgpData.localAS;
           const nextAsn = asPath[i + 1];
           let asInfoItem = asInfo.find('asn', asn)[0];
           if (undefined === asInfoItem) {
@@ -129,6 +135,12 @@ export class DataModel {
     this.#ipv6RouterId = bgpData.routerId;
     const routes = new Table<Route>(['prefix', 'originAsn']);
     const asInfo = new Table<AsInfo>(['asn']);
+    const localAsInfoItem = {
+      asn: bgpData.localAS,
+      prefixes: [],
+      neighborAsns: [],
+    };
+    asInfo.add(localAsInfoItem);
     for (const prefix in bgpData.routes) {
       const bgpRoutes = bgpData.routes[prefix]!;
       for (const route of bgpRoutes) {
@@ -161,7 +173,7 @@ export class DataModel {
         (asInfoItem.prefixes as string[]).push(route.network);
         for (let i = 0; i < asPath.length; i++) {
           const asn = asPath[i]!;
-          const prevAsn = asPath[i - 1];
+          const prevAsn = asPath[i - 1] ?? bgpData.localAS;
           const nextAsn = asPath[i + 1];
           let asInfoItem = asInfo.find('asn', asn)[0];
           if (undefined === asInfoItem) {
