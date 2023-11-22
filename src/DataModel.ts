@@ -82,6 +82,12 @@ export class DataModel {
         if (!route.valid) {
           continue;
         }
+        const asPathParts = route.path.split(' ');
+        for (const part of asPathParts) {
+          if (isNaN(parseInt(part, 10))) {
+            console.info(`Invalid AS path: ${route.path}`);
+          }
+        }
         const asPath = route.path.split(' ').map((asn) => parseInt(asn, 10));
         if (asPath.length < 1) {
           continue;
@@ -150,6 +156,12 @@ export class DataModel {
         }
         if (!route.valid) {
           continue;
+        }
+        const asPathParts = route.path.split(' ');
+        for (const part of asPathParts) {
+          if (isNaN(parseInt(part, 10))) {
+            console.info(`Invalid AS path: ${route.path}`);
+          }
         }
         const asPath = route.path.split(' ').map((asn) => parseInt(asn, 10));
         if (asPath.length < 1) {
