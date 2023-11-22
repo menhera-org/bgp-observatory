@@ -2,7 +2,7 @@
 
 set -e
 
-exec >(logger -s -t $(basename $0)) 2>&1
+exec >>/tmp/bgp-observatory-frr.log 2>&1
 
 PATH=$PATH:/sbin:/bin:/usr/sbin:/usr/bin:/usr/local/sbin:/usr/local/bin
 
