@@ -21,8 +21,8 @@ import * as fs from 'node:fs/promises';
 
 import 'dotenv/config';
 
-import { watchFile } from './utils';
-import { DataModel } from './DataModel';
+import { watchFile } from './utils.js';
+import { DataModel } from './DataModel.js';
 
 const BGP_IPV4_JSON = process.env.BGP_IPV4_JSON || '/tmp/bgp_ipv4.json';
 const BGP_IPV6_JSON = process.env.BGP_IPV6_JSON || '/tmp/bgp_ipv6.json';

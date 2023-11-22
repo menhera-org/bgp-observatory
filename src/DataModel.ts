@@ -17,8 +17,8 @@
   @license
 */
 
-import { FrrBgp } from "./types";
-import { Table } from "./Table";
+import { FrrBgp } from "./types.js";
+import { Table } from "./Table.js";
 
 export interface DataModelOptions {
   ignoreDefaultRoutes?: boolean;
