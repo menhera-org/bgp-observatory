@@ -1,0 +1,30 @@
+{
+  "name": "@menhera/bgp-observatory",
+  "version": "0.1.0",
+  "description": "Visualize the whole Internet seen from your AS",
+  "main": "dist/index.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/menhera-org/bgp-observatory.git"
+  },
+  "keywords": [
+    "bgp"
+  ],
+  "author": "Menhera.org",
+  "license": "Apache-2.0",
+  "bugs": {
+    "url": "https://github.com/menhera-org/bgp-observatory/issues"
+  },
+  "homepage": "https://github.com/menhera-org/bgp-observatory#readme",
+  "dependencies": {
+    "dotenv": "^16.3.1",
+    "express": "^4.18.2"
+  },
+  "devDependencies": {
+    "@types/node": "^20.9.4",
+    "typescript": "^5.3.2"
+  }
+}
