@@ -103,10 +103,11 @@ export class DataModel {
           asInfo.add(asInfoItem);
         }
         (asInfoItem.prefixes as string[]).push(route.network);
-        for (let i = 0; i < asPath.length; i++) {
-          const asn = asPath[i]!;
-          const prevAsn = asPath[i - 1] ?? bgpData.localAS;
-          const nextAsn = asPath[i + 1];
+        const asPathIncludingLocalAsn = [bgpData.localAS, ...asPath];
+        for (let i = 0; i < asPathIncludingLocalAsn.length; i++) {
+          const asn = asPathIncludingLocalAsn[i]!;
+          const prevAsn = asPathIncludingLocalAsn[i - 1];
+          const nextAsn = asPathIncludingLocalAsn[i + 1];
           let asInfoItem = asInfo.find('asn', asn)[0];
           if (undefined === asInfoItem) {
             asInfoItem = {
@@ -171,10 +172,11 @@ export class DataModel {
           asInfo.add(asInfoItem);
         }
         (asInfoItem.prefixes as string[]).push(route.network);
-        for (let i = 0; i < asPath.length; i++) {
-          const asn = asPath[i]!;
-          const prevAsn = asPath[i - 1] ?? bgpData.localAS;
-          const nextAsn = asPath[i + 1];
+        const asPathIncludingLocalAsn = [bgpData.localAS, ...asPath];
+        for (let i = 0; i < asPathIncludingLocalAsn.length; i++) {
+          const asn = asPathIncludingLocalAsn[i]!;
+          const prevAsn = asPathIncludingLocalAsn[i - 1];
+          const nextAsn = asPathIncludingLocalAsn[i + 1];
           let asInfoItem = asInfo.find('asn', asn)[0];
           if (undefined === asInfoItem) {
             asInfoItem = {
