@@ -28,6 +28,10 @@ import { DataModel } from './DataModel.js';
 
 const BGP_IPV4_JSON = process.env.BGP_IPV4_JSON || '/tmp/bgp_ipv4.json';
 const BGP_IPV6_JSON = process.env.BGP_IPV6_JSON || '/tmp/bgp_ipv6.json';
+
+const AS_INFO_IPV4_JSON = process.env.AS_INFO_IPV4_JSON || '/tmp/as_info_ipv4.json';
+const AS_INFO_IPV6_JSON = process.env.AS_INFO_IPV6_JSON || '/tmp/as_info_ipv6.json';
+
 const IGNORE_DEFAULT_ROUTES = !!parseInt(process.env.IGNORE_DEFAULT_ROUTES || '1', 10);
 
 const model = new DataModel({ ignoreDefaultRoutes: IGNORE_DEFAULT_ROUTES });
@@ -40,8 +44,8 @@ watchFile(BGP_IPV4_JSON, async () => {
     model.importIpv4Data(value);
     const asInfo = model.getIpv4AsInfo();
     const asInfoJson = JSON.stringify(asInfo, null, 2);
-    process.stdout.write(asInfoJson);
-    process.stdout.write('\n');
+    fs.writeFile(AS_INFO_IPV4_JSON, asInfoJson);
+    process.stdout.write('Updated AS info for IPv4\n');
   });
 });
 
@@ -53,7 +57,7 @@ watchFile(BGP_IPV6_JSON, async () => {
     model.importIpv6Data(value);
     const asInfo = model.getIpv6AsInfo();
     const asInfoJson = JSON.stringify(asInfo, null, 2);
-    process.stdout.write(asInfoJson);
-    process.stdout.write('\n');
+    fs.writeFile(AS_INFO_IPV6_JSON, asInfoJson);
+    process.stdout.write('Updated AS info for IPv6\n');
   });
 });
