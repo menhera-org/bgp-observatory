@@ -40,11 +40,11 @@ watchFile(BGP_IPV4_JSON, async () => {
   const stream = createReadStream(BGP_IPV4_JSON, 'utf-8');
   const parser = new JSONParser({ stringBufferSize: undefined, paths: ['$'] });
   const reader = stream.pipe(parser);
-  reader.on('data', ({value}) => {
+  reader.on('data', async ({value}) => {
     model.importIpv4Data(value);
     const asInfo = model.getIpv4AsInfo();
     const asInfoJson = JSON.stringify(asInfo, null, 2);
-    fs.writeFile(AS_INFO_IPV4_JSON, asInfoJson);
+    await fs.writeFile(AS_INFO_IPV4_JSON, asInfoJson);
     process.stdout.write('Updated AS info for IPv4\n');
   });
 });
@@ -53,11 +53,11 @@ watchFile(BGP_IPV6_JSON, async () => {
   const stream = createReadStream(BGP_IPV6_JSON, 'utf-8');
   const parser = new JSONParser({ stringBufferSize: undefined, paths: ['$'] });
   const reader = stream.pipe(parser);
-  reader.on('data', ({value}) => {
+  reader.on('data', async ({value}) => {
     model.importIpv6Data(value);
     const asInfo = model.getIpv6AsInfo();
     const asInfoJson = JSON.stringify(asInfo, null, 2);
-    fs.writeFile(AS_INFO_IPV6_JSON, asInfoJson);
+    await fs.writeFile(AS_INFO_IPV6_JSON, asInfoJson);
     process.stdout.write('Updated AS info for IPv6\n');
   });
 });
