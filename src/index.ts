@@ -18,6 +18,8 @@
 */
 
 import * as fs from 'node:fs/promises';
+import { createReadStream } from 'node:fs';
+import { JSONParser } from '@streamparser/json-node';
 
 import 'dotenv/config';
 
@@ -31,19 +33,27 @@ const IGNORE_DEFAULT_ROUTES = !!parseInt(process.env.IGNORE_DEFAULT_ROUTES || '1
 const model = new DataModel({ ignoreDefaultRoutes: IGNORE_DEFAULT_ROUTES });
 
 watchFile(BGP_IPV4_JSON, async () => {
-  const json = await fs.readFile(BGP_IPV4_JSON, 'utf-8');
-  model.importIpv4Json(json);
-  const asInfo = model.getIpv4AsInfo();
-  const asInfoJson = JSON.stringify(asInfo, null, 2);
-  process.stdout.write(asInfoJson);
-  process.stdout.write('\n');
+  const stream = createReadStream(BGP_IPV4_JSON, 'utf-8');
+  const parser = new JSONParser({ stringBufferSize: undefined, paths: ['$'] });
+  const reader = stream.pipe(parser);
+  reader.on('data', ({value}) => {
+    model.importIpv4Json(value);
+    const asInfo = model.getIpv4AsInfo();
+    const asInfoJson = JSON.stringify(asInfo, null, 2);
+    process.stdout.write(asInfoJson);
+    process.stdout.write('\n');
+  });
 });
 
 watchFile(BGP_IPV6_JSON, async () => {
-  const json = await fs.readFile(BGP_IPV6_JSON, 'utf-8');
-  model.importIpv6Json(json);
-  const asInfo = model.getIpv6AsInfo();
-  const asInfoJson = JSON.stringify(asInfo, null, 2);
-  process.stdout.write(asInfoJson);
-  process.stdout.write('\n');
+  const stream = createReadStream(BGP_IPV6_JSON, 'utf-8');
+  const parser = new JSONParser({ stringBufferSize: undefined, paths: ['$'] });
+  const reader = stream.pipe(parser);
+  reader.on('data', ({value}) => {
+    model.importIpv6Json(value);
+    const asInfo = model.getIpv6AsInfo();
+    const asInfoJson = JSON.stringify(asInfo, null, 2);
+    process.stdout.write(asInfoJson);
+    process.stdout.write('\n');
+  });
 });

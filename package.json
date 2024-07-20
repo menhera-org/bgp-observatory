@@ -21,6 +21,7 @@
   },
   "homepage": "https://github.com/menhera-org/bgp-observatory#readme",
   "dependencies": {
+    "@streamparser/json-node": "^0.0.21",
     "dotenv": "^16.3.1",
     "express": "^4.18.2"
   },

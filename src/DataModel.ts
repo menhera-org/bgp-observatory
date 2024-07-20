@@ -71,8 +71,8 @@ export class DataModel {
     this.#options = options;
   }
 
-  #parseBgpData(ipVersion: 4 | 6, json: string): ParsedBgpData {
-    const bgpData: FrrBgp = JSON.parse(json);
+  #parseBgpData(ipVersion: 4 | 6, bgpData: FrrBgp): ParsedBgpData {
+    // const bgpData: FrrBgp = JSON.parse(json);
     const localAsn = bgpData.localAS;
     const routerId = bgpData.routerId;
     const routes = new Table<Route>(['prefix', 'originAsn', 'asPath']);
@@ -202,7 +202,7 @@ export class DataModel {
   }
 
   public importIpv4Json(json: string): void {
-    const bgpData = this.#parseBgpData(4, json);
+    const bgpData = this.#parseBgpData(4, JSON.parse(json));
     this.#ipv4LocalAsn = bgpData.localAsn;
     this.#ipv4RouterId = bgpData.routerId;
     this.#ipv4Routes = bgpData.routes;
@@ -210,7 +210,23 @@ export class DataModel {
   }
 
   public importIpv6Json(json: string): void {
-    const bgpData = this.#parseBgpData(6, json);
+    const bgpData = this.#parseBgpData(6, JSON.parse(json));
+    this.#ipv6LocalAsn = bgpData.localAsn;
+    this.#ipv6RouterId = bgpData.routerId;
+    this.#ipv6Routes = bgpData.routes;
+    this.#ipv6AsInfo = bgpData.asInfo;
+  }
+
+  public importIpv4Data(data: FrrBgp): void {
+    const bgpData = this.#parseBgpData(4, data);
+    this.#ipv4LocalAsn = bgpData.localAsn;
+    this.#ipv4RouterId = bgpData.routerId;
+    this.#ipv4Routes = bgpData.routes;
+    this.#ipv4AsInfo = bgpData.asInfo;
+  }
+
+  public importIpv6Data(data: FrrBgp): void {
+    const bgpData = this.#parseBgpData(6, data);
     this.#ipv6LocalAsn = bgpData.localAsn;
     this.#ipv6RouterId = bgpData.routerId;
     this.#ipv6Routes = bgpData.routes;
