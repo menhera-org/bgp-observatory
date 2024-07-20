@@ -37,7 +37,7 @@ watchFile(BGP_IPV4_JSON, async () => {
   const parser = new JSONParser({ stringBufferSize: undefined, paths: ['$'] });
   const reader = stream.pipe(parser);
   reader.on('data', ({value}) => {
-    model.importIpv4Json(value);
+    model.importIpv4Data(value);
     const asInfo = model.getIpv4AsInfo();
     const asInfoJson = JSON.stringify(asInfo, null, 2);
     process.stdout.write(asInfoJson);
@@ -50,7 +50,7 @@ watchFile(BGP_IPV6_JSON, async () => {
   const parser = new JSONParser({ stringBufferSize: undefined, paths: ['$'] });
   const reader = stream.pipe(parser);
   reader.on('data', ({value}) => {
-    model.importIpv6Json(value);
+    model.importIpv6Data(value);
     const asInfo = model.getIpv6AsInfo();
     const asInfoJson = JSON.stringify(asInfo, null, 2);
     process.stdout.write(asInfoJson);
